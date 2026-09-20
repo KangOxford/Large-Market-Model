@@ -23,7 +23,7 @@
   <section id="overview" class="prose">
     <h2>Overview</h2>
     <p>We study market action generation, where an <strong>action</strong> is a market event. A dual-encoder model encodes the current action and observation separately, fuses their representations, and predicts the next action. A matching engine then applies that action to its retained state.</p>
-    <p>Data are trained on or replayed in chunks—for example, 1,000 or 2,000 actions at a time. A true snapshot is available <strong>at every chunk boundary</strong>, not just at the start of the trading day. But a true snapshot may expose only the top 10 price levels. Resetting to that observation cannot recover deeper levels or order identities that were never included.</p>
+    <p>Data are trained on or replayed in chunks—for example, 1,000 or 2,000 actions at a time. A true observation is available <strong>at every chunk boundary</strong>, not just at the start of the trading day. This observation may contain only the top 10 price levels, rather than the full state. Resetting to that observation cannot recover deeper levels or order identities that were never included.</p>
     <p>Before evaluating the action model, observation encoder, or state compression, we need to establish that initialization and replay are consistent under true actions. More model capacity, a smaller latent representation, and higher token accuracy cannot by themselves recover missing initial information.</p>
   </section>
 
