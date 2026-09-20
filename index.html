@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Large Market Model: action generation, deterministic state updates, and why a truncated observation is not a complete replay state.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Large Market Model — State, Action &amp; Observation</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="math-config.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<a class="skip" href="#overview">Skip to content</a>
+<header class="hero">
+  <p class="eyebrow">A research note on market action generation</p>
+  <h1>Large Market Model</h1>
+  <p class="subtitle">State, Action &amp; Observation</p>
+  <p class="deck">Predict the next action.<br>Rebuild the state. Preserve the information.</p>
+  <nav class="resources" aria-label="Project resources">
+    <a class="button primary" href="https://github.com/KangOxford/Large-Market-Model">GitHub <span aria-hidden="true">↗</span></a>
+    <a class="button" href="#architecture">Model architecture <span aria-hidden="true">↓</span></a>
+    <a class="button" href="assets/dual_encoder_training_inference_combined.png">Full-size diagrams <span aria-hidden="true">↗</span></a>
+  </nav>
+</header>
+<main>
+  <div class="takeaway prose"><strong>TL;DR</strong><p>Correct actions do not repair an incomplete initial state. Even with every true action in a replay chunk, a top-<i>K</i> starting observation can produce an incorrect order book when an unobserved price level moves into view.</p></div>
+  <nav class="contents prose" aria-label="On this page"><a href="#overview">Overview</a><a href="#backfill">Execution &amp; backfill</a><a href="#architecture">Training &amp; inference</a><a href="#closure">State closure</a><a href="#implications">Practical consequences</a></nav>
+
+  <section id="overview" class="prose">
+    <h2>Overview</h2>
+    <p>We study market action generation, where an <strong>action</strong> is a market event. A dual-encoder model encodes the current action and observation separately, fuses their representations, and predicts the next action. A matching engine then applies that action to its retained state.</p>
+    <p>Data are trained on or replayed in chunks—for example, 1,000 or 2,000 actions at a time. A true snapshot is available <strong>at every chunk boundary</strong>, not just at the start of the trading day. But a true snapshot may expose only the top 10 price levels. Resetting to that observation cannot recover deeper levels or order identities that were never included.</p>
+    <p>Before evaluating the action model, observation encoder, or state compression, we need to establish that initialization and replay are consistent under true actions. More model capacity, a smaller latent representation, and higher token accuracy cannot by themselves recover missing initial information.</p>
+  </section>
+
+  <section id="backfill">
+    <div class="prose"><h2>When execution reveals missing state</h2><p>The same execution can succeed in both engines while their resulting observations diverge. The sell-side example below separates the observed top three levels from the deeper, non-observed state.</p></div>
+    <figure class="wide">
+      <a href="assets/execution-backfill.png" aria-label="Open the execution and backfill diagram at full resolution"><img src="assets/execution-backfill.png" width="1792" height="1186" alt="Blue true state and red reconstructed state start with identical top-three observations. Buying 10 at 100 removes the best ask in both. The true state backfills 103 × 40 from depth, while the reconstructed state has no initialized level to backfill."></a>
+      <figcaption><strong>Execution and backfill.</strong> Blue denotes the true state; red denotes the reconstructed state. Entries are price × quantity. The stages within \(t=1\) expand a single execution; they are not separate predicted actions.</figcaption>
+    </figure>
+    <div class="prose steps">
+      <p><span class="step">1</span><strong>Initialize.</strong> Both observations contain \(100\times10\), \(101\times20\), and \(102\times30\). Only the true state also contains \(103\times40\), \(104\times50\), and deeper levels.</p>
+      <p><span class="step">2</span><strong>Execute.</strong> The same buy action, <code>Buy 10 @ 100</code>, clears the best ask in both states.</p>
+      <p><span class="step">3</span><strong>Shift and backfill.</strong> Surviving levels move up. The true state brings \(103\times40\) into the third observed level. The truncated reconstruction cannot supply that level because it was never initialized.</p>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="prose">
+      <h2>One predictor, two operating modes</h2>
+      <p>Let \(a_t\) be the current action, \(s_t\) the full state after applying it, and \(o_t=H(s_t)\) the current observation. The operation \(H\) extracts what the model can see—for example, the top 10 price levels. <strong>It is not another prediction model.</strong></p>
+      <div class="equation">\[p_\theta(a_{t+1}\mid a_t,o_t)\]</div>
+      <p>The diagrams use a single-step input pair \((a_t,o_t)\). When an action contains multiple tokens, its prediction also conditions on the preceding tokens within that action. This is the design described here, rather than a claim that a particular implementation’s loader or cache has been verified.</p>
+      <p><strong>The next-token predictor is identical in training and inference.</strong> Both use the same action encoder, observation encoder, fused backbone, and prediction head. The model predicts an action; the engine updates the state.</p>
+    </div>
+    <div class="architecture wide">
+      <figure>
+        <a href="assets/dual_encoder_training.png" aria-label="Open the training diagram at full resolution"><img src="assets/dual_encoder_training.png" width="1061" height="760" loading="lazy" alt="Training: current ground-truth action and observation enter separate encoders, then a shared backbone predicts next-token logits. Cross-entropy compares the logits with the ground-truth next token; there is no token selection."></a>
+        <figcaption><strong>Figure 1. Training with ground-truth action and observation.</strong> The dual-encoder model takes the current ground-truth action \(a_t^{\mathrm{GT}}\) and observation \(o_t^{\mathrm{GT}}\) as inputs, fuses their encoded representations, and predicts the tokens of the next action \(a_{t+1}\). Training uses teacher forcing: preceding tokens within the target action are provided as ground truth, and token cross-entropy is computed against the ground-truth next token. No token selection or generated-observation feedback is required.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/dual_encoder_inference.png" aria-label="Open the inference diagram at full resolution"><img src="assets/dual_encoder_inference.png" width="1061" height="1027" loading="lazy" alt="Inference: the same predictor selects tokens, then detokenizes a complete action. The matching engine updates the retained state, H extracts an observation, and the new action and observation feed the next prediction."></a>
+        <figcaption><strong>Figure 2. Inference with deterministic state updates.</strong> The same dual-encoder model takes the current action \(\widehat a_t\) and observation \(\widehat o_t\) as inputs. Tokens are selected autoregressively and detokenized into the next action \(\widehat a_{t+1}\). The matching engine updates the retained state through \(\widehat s_{t+1}=F(\widehat s_t,\widehat a_{t+1})\). The observation is then extracted as \(\widehat o_{t+1}=H(\widehat s_{t+1})\), where \(H\) selects the information visible to the model from the full state—for example, the top-10 price levels. The new action and observation become the inputs for the next prediction, without future ground-truth inputs.</figcaption>
+      </figure>
+    </div>
+    <div class="prose"><details><summary>Token-level training objective</summary><p>For token \(j\) of the next action, teacher forcing supplies the ground-truth token prefix:</p><div class="equation">\[\mathcal L_j=-\log p_\theta\!\left(u_{t+1,j}^{\mathrm{GT}}\mid a_t^{\mathrm{GT}},\operatorname{EncodeObs}(o_t^{\mathrm{GT}}),u_{t+1,&lt;j}^{\mathrm{GT}}\right).\]</div><p>Training computes loss directly from the predicted distribution. Inference instead selects tokens and detokenizes them before the engine applies the complete action.</p></details></div>
+  </section>
+
+  <section id="closure" class="prose">
+    <h2>Why a truncated observation is not closed</h2>
+    <p>The execution example illustrates an information gap. Formally, let \(H_K\) extract the top-\(K\) observation from a full state:</p>
+    <div class="equation">\[o_t=H_K(s_t),\qquad s_{t+1}=F(s_t,a_{t+1}).\]</div>
+    <p>If the observation and next action were sufficient to determine the next observation exactly, a deterministic function \(G_K\) would satisfy the following for every allowed state and action:</p>
+    <div class="equation">\[H_K\!\left(F(s_t,a_{t+1})\right)=G_K\!\left(H_K(s_t),a_{t+1}\right).\]</div>
+    <p>But two full states can have identical top-\(K\) observations and reveal different deeper levels after the same action:</p>
+    <div class="equation highlight">\[\begin{aligned}H_K(s_t^A)&=H_K(s_t^B),\\H_K\!\left(F(s_t^A,a_{t+1})\right)&\ne H_K\!\left(F(s_t^B,a_{t+1})\right).\end{aligned}\]</div>
+    <p>The inputs to \(G_K\) would be identical, but the required outputs would differ. Therefore no such deterministic \(G_K\) is correct for all these cases. <strong>Deterministic transitions of the full state do not imply deterministic transitions from a truncated observation alone.</strong></p>
+  </section>
+
+  <section id="implications" class="prose">
+    <h2>What this means in practice</h2>
+    <p><strong>Even a complete, perfectly correct sequence of subsequent actions may fail to reconstruct the true order book.</strong> “Complete” here describes the actions within a chunk, not the initial state. Starting from a true but truncated observation, replay can become incorrect without any action-prediction error. Once missing depth moves into view, even the observation returned to the model may be wrong.</p>
+    <p>That error enters the inference feedback loop: the reconstructed observation becomes the condition for the next action prediction. Trajectory deviations can therefore mix initialization or replay error with prediction error. Token accuracy alone cannot establish that the whole system is correct, and not every trajectory mismatch is a model error.</p>
+    <p>Training conditions on true observations, while inference conditions on reconstructed observations. Reconstruction error can thus create a mismatch between the inputs seen in the two modes.</p>
+    <aside class="boundary"><h3>The precise boundary</h3><p>With a complete required initial state, all subsequent actions, complete event semantics, and a correct matching engine, deterministic transitions should be reproducible exactly. The limitation is that <strong>complete subsequent actions cannot, in general, recover an incomplete initial state.</strong></p></aside>
+  </section>
+</main>
+<footer class="prose"><p><a href="https://github.com/KangOxford/Large-Market-Model">Large Market Model</a> · Research note</p><p>Page layout inspired by <a href="https://eshyperscale.github.io/">Evolution Strategies at the Hyperscale</a>. Original diagrams preserved.</p></footer>
+</body>
+</html>
