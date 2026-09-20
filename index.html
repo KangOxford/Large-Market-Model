@@ -79,6 +79,24 @@
     <p>Training conditions on true observations, while inference conditions on reconstructed observations. Reconstruction error can thus create a mismatch between the inputs seen in the two modes.</p>
     <aside class="boundary"><h3>The precise boundary</h3><p>With a complete required initial state, all subsequent actions, complete event semantics, and a correct matching engine, deterministic transitions should be reproducible exactly. The limitation is that <strong>complete subsequent actions cannot, in general, recover an incomplete initial state.</strong></p></aside>
   </section>
+  <section id="variable-length" class="prose">
+    <h2>Variable length: the order-book state has no fixed input length</h2>
+    <h3>The same state representation can have different lengths across time and sides</h3>
+    <p>The following two figures use <strong>GOOG 2025 training data only</strong>: 250 dates and \(T=1{,}641{,}393{,}087\) available market events, measured event by event with no depth truncation or event subsampling. Pre-market records are included. Vendor source files end early on 13 dates; only the records actually available on those dates are included. The earlier 5K / 50K depths are examples of scale; the figures and their tables report measurements for this sample.</p>
+    <p>The two distributions measure different quantities:</p>
+    <ul>
+      <li><strong>Book-length distribution:</strong> \(n_t^\sigma\), the number of occupied price levels on side \(\sigma\) after each action. Every event has equal weight; dates and elapsed trading time are not equally weighted.</li>
+      <li><strong>Change-position distribution:</strong> the rank of a price level on its side when its aggregate quantity changes. Each price level with a net quantity change counts once. A rank shift caused only by deleting an earlier level does not count as a new quantity change.</li>
+    </ul>
+    <figure>
+      <a href="assets/training_change_depth_buy_sell.png" aria-label="Open the training change-depth distributions at full resolution"><img src="assets/training_change_depth_buy_sell.png" width="2380" height="1428" loading="lazy" alt="GOOG 2025 training change-depth cumulative distributions, buy on the left and sell on the right. The black curves show all changed price levels; the gray dashed curves show total book depth. Black markers indicate the median, 99th percentile, and maximum change depth."></a>
+      <figcaption><strong>Figure 4B. Change positions compared with full book length.</strong> The black curve is the empirical cumulative distribution \(\widehat G\) of all changed price levels. Green, blue, and orange denote new price levels, quantity changes at existing levels, and entire price-level removals, respectively; each category is normalized separately. The gray dashed curve is the book-length distribution \(\widehat F\) over all events. The horizontal axis is logarithmic; solid dots mark Q50, Q99, and the maximum of the black curve. Adding an order at an existing price counts as a quantity change, not a new price level.</figcaption>
+    </figure>
+    <figure>
+      <a href="assets/training_depth_distribution_quantiles.png" aria-label="Open the training depth distribution and quantiles at full resolution"><img src="assets/training_depth_distribution_quantiles.png" width="2520" height="1350" loading="lazy" alt="GOOG 2025 training book-depth distributions and Q1–Q99 quantiles. Buy/bid is blue and sell/ask is orange. Median depths are 3,024 and 1,459 occupied levels; maximum depths are 5,430 and 3,549, respectively."></a>
+      <figcaption><strong>Figure 4C. Input length is not a single constant.</strong> This figure contains GOOG 2025 training data only: buy / bid is blue and sell / ask is orange. The left panel groups depth into bins of 50 price levels, with the percentage of events in each bin on the vertical axis. The right panel shows Q1–Q99 computed from exact counts; the table separately reports the maximum.</figcaption>
+    </figure>
+  </section>
 </main>
 <footer class="prose"><p><a href="https://github.com/KangOxford/Large-Market-Model">Large Market Model</a> · Research note</p><p>Page styling follows <a href="https://github.com/KangOxford/sigma0">σ₀</a>. Original diagrams preserved.</p></footer>
 </body>
