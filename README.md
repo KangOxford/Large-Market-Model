@@ -2,7 +2,7 @@
 
 An English research website on dual-encoder action generation, deterministic state updates, and state completeness in order-book replay.
 
-The page adapts `orderbook_state_closure_dual_encoder.md` into an academic project-page layout inspired by [Evolution Strategies at the Hyperscale](https://eshyperscale.github.io/). The layout is implemented independently; all supplied diagrams are preserved without modification.
+The page adapts `orderbook_state_closure_dual_encoder.md` into an academic project-page layout inspired by [σ₀](https://github.com/KangOxford/sigma0). The layout is implemented independently; all supplied diagrams are preserved without modification.
 
 ## Local preview
 

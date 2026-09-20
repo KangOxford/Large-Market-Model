@@ -14,19 +14,11 @@
 <body>
 <a class="skip" href="#overview">Skip to content</a>
 <header class="hero">
-  <p class="eyebrow">A research note on market action generation</p>
-  <h1>Large Market Model</h1>
-  <p class="subtitle">State, Action &amp; Observation</p>
-  <p class="deck">Predict the next action.<br>Rebuild the state. Preserve the information.</p>
-  <nav class="resources" aria-label="Project resources">
-    <a class="button primary" href="https://github.com/KangOxford/Large-Market-Model">GitHub <span aria-hidden="true">↗</span></a>
-    <a class="button" href="#architecture">Model architecture <span aria-hidden="true">↓</span></a>
-    <a class="button" href="assets/dual_encoder_training_inference_combined.png">Full-size diagrams <span aria-hidden="true">↗</span></a>
-  </nav>
+  <h1>large market model</h1>
+  <p class="subtitle">State, Action &amp; Observation<br>State completeness in dual-encoder market action generation</p>
 </header>
 <main>
-  <div class="takeaway prose"><strong>TL;DR</strong><p>Correct actions do not repair an incomplete initial state. Even with every true action in a replay chunk, a top-<i>K</i> starting observation can produce an incorrect order book when an unobserved price level moves into view.</p></div>
-  <nav class="contents prose" aria-label="On this page"><a href="#overview">Overview</a><a href="#backfill">Execution &amp; backfill</a><a href="#architecture">Training &amp; inference</a><a href="#closure">State closure</a><a href="#implications">Practical consequences</a></nav>
+  <div class="takeaway prose"><p><strong>TL;DR:</strong> Correct actions do not repair an incomplete initial state. Even with every true action in a replay chunk, a top-<i>K</i> starting observation can produce an incorrect order book when an unobserved price level moves into view.</p></div>
 
   <section id="overview" class="prose">
     <h2>Overview</h2>
@@ -88,6 +80,6 @@
     <aside class="boundary"><h3>The precise boundary</h3><p>With a complete required initial state, all subsequent actions, complete event semantics, and a correct matching engine, deterministic transitions should be reproducible exactly. The limitation is that <strong>complete subsequent actions cannot, in general, recover an incomplete initial state.</strong></p></aside>
   </section>
 </main>
-<footer class="prose"><p><a href="https://github.com/KangOxford/Large-Market-Model">Large Market Model</a> · Research note</p><p>Page layout inspired by <a href="https://eshyperscale.github.io/">Evolution Strategies at the Hyperscale</a>. Original diagrams preserved.</p></footer>
+<footer class="prose"><p><a href="https://github.com/KangOxford/Large-Market-Model">Large Market Model</a> · Research note</p><p>Page styling follows <a href="https://github.com/KangOxford/sigma0">σ₀</a>. Original diagrams preserved.</p></footer>
 </body>
 </html>
