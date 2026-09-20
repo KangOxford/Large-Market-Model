@@ -25,8 +25,8 @@ figcaption{margin:8px auto 0;color:#666;font-size:13px;line-height:1.7}#backfill
 .steps{margin-top:24px}.steps p{position:relative;padding-left:36px}
 .step{position:absolute;left:0;top:2px;border-radius:4px;background:#1772d0;color:#fff;width:24px;text-align:center;font-size:12px;font-weight:700;line-height:22px}
 code{padding:2px 4px;border-radius:4px;background:#f5f5f5;font-size:13px}
-.architecture{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:25px}
-.architecture figure{display:grid;grid-template-rows:1fr auto;margin:0}.architecture figure>a{align-self:center}.architecture figcaption{margin-top:18px}
+.architecture{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:25px;width:min(1700px,calc(100vw - 40px));max-width:none;position:relative;left:50%;transform:translateX(-50%)}
+.architecture figure{display:grid;grid-template-rows:1fr auto;margin:0}.architecture figure>a{align-self:center}.architecture figcaption{margin-top:18px;font-size:14px;padding:0 12px}
 details{margin-top:25px;border:1px solid #ddd;border-radius:4px;background:#fafafa}
 summary{cursor:pointer;padding:12px 18px;background:#f1f1f1;font-size:14px}summary:hover{background:#e1e1e1}details[open] summary{border-bottom:1px solid #ddd;margin-bottom:12px}details>p{padding:0 18px}
 .equation{overflow-x:auto;padding:10px 4px;margin:16px 0}.highlight{padding:15px;border:1px solid #e8e8e8;border-radius:8px;background:#fafafa}
@@ -37,4 +37,4 @@ mjx-container{max-width:100%}
 @media(min-width:768px) and (max-width:991px){.hero,main,footer.prose{max-width:720px}}
 @media(max-width:700px){.hero{padding-top:20px}h1{font-size:34px}.subtitle{margin-bottom:20px}.button{padding:9px 12px}.takeaway{padding:20px}h2{font-size:26px}section{margin-top:34px}.architecture{grid-template-columns:1fr;gap:30px}.architecture figure{display:block}.equation{font-size:13px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-@media print{.resources,.skip{display:none}.hero{padding-top:0}figure{break-inside:avoid}.architecture{display:block}}
+@media print{.resources,.skip{display:none}.hero{padding-top:0}figure{break-inside:avoid}.architecture{display:block;width:100%;left:auto;transform:none}}
